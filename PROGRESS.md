@@ -18,6 +18,13 @@
 - Created `polecat/config.py` with constants (URLs, timezone, term, timeouts)
 - Created `requirements.txt` with dependencies
 
+### Commit 3: Browser Module
+- Created `polecat/browser.py` with Playwright setup
+- `launch_browser()` — launches headful Chromium
+- `create_page()` — creates page with default timeouts
+- `wait_for_login()` — navigates to dashboard, waits for SSO completion
+- `wait_for_term_selection()` — prompts user to select term, waits for confirmation
+
 ---
 
 ## In Progress
@@ -26,13 +33,12 @@
 ---
 
 ## Up Next
-1. `browser.py` — Playwright setup + SSO login wait
-2. `scrapers.py` — Course discovery from dashboard
-3. `scrapers.py` — Date extraction (Source A: Key dates, Source B: Assessment guidance)
-4. `parsers.py` — Date/text parsing utilities
-5. `calendar_gen.py` — ICS file generation
-6. `main.py` — CLI orchestrator
-7. Unit tests for parsers and calendar generation
+1. `scrapers.py` — Course discovery from dashboard
+2. `scrapers.py` — Date extraction (Source A: Key dates, Source B: Assessment guidance)
+3. `parsers.py` — Date/text parsing utilities
+4. `calendar_gen.py` — ICS file generation
+5. `main.py` — CLI orchestrator
+6. Unit tests for parsers and calendar generation
 
 ---
 
