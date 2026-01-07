@@ -25,6 +25,14 @@
 - `wait_for_login()` — navigates to dashboard, waits for SSO completion
 - `wait_for_term_selection()` — prompts user to select term, waits for confirmation
 
+### Commit 4: Scrapers Module
+- Created `polecat/scrapers.py` with BeautifulSoup extraction
+- Data classes: `Course`, `ExtractedDate`
+- `extract_courses()` — finds course cards on dashboard (multiple selector strategies)
+- `extract_key_dates()` — Source A extraction from Key dates table
+- `extract_assessment_dates()` — Source B extraction from Assessment guidance text
+- `scrape_course_dates()` — navigates to course and extracts from both sources
+
 ---
 
 ## In Progress
@@ -33,12 +41,10 @@
 ---
 
 ## Up Next
-1. `scrapers.py` — Course discovery from dashboard
-2. `scrapers.py` — Date extraction (Source A: Key dates, Source B: Assessment guidance)
-3. `parsers.py` — Date/text parsing utilities
-4. `calendar_gen.py` — ICS file generation
-5. `main.py` — CLI orchestrator
-6. Unit tests for parsers and calendar generation
+1. `parsers.py` — Date/text parsing utilities
+2. `calendar_gen.py` — ICS file generation
+3. `main.py` — CLI orchestrator
+4. Unit tests for parsers and calendar generation
 
 ---
 
