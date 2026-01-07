@@ -43,6 +43,15 @@
 - `parse_extracted_date()` — converts ExtractedDate to ParsedEvent(s)
 - `merge_events()` — deduplicates and flags conflicts (Source B prioritized)
 
+### Commit 6: Calendar Generation Module
+- Created `polecat/calendar_gen.py` with ICS generation
+- `generate_uid()` — stable UIDs via SHA256 hash to prevent duplicates on re-import
+- `create_event()` — converts ParsedEvent to ics.Event (handles all-day/timed)
+- `create_calendar()` — builds Calendar from list of events
+- `get_output_filename()` — generates filename like `JBS_Calendar_Lent_2025.ics`
+- `write_calendar()` — writes ICS file to disk
+- `generate_ics()` — main entry point combining all steps
+
 ---
 
 ## In Progress
@@ -51,9 +60,8 @@
 ---
 
 ## Up Next
-1. `calendar_gen.py` — ICS file generation
-2. `main.py` — CLI orchestrator
-3. Unit tests for parsers and calendar generation
+1. `main.py` — CLI orchestrator
+2. Unit tests for parsers and calendar generation
 
 ---
 
