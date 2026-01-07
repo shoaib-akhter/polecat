@@ -139,7 +139,7 @@
 ---
 
 ## Up Next
-1. **Test quiz extraction on live site** — Verify MBA11 Marketing quizzes captured
+1. **Phase 1 complete!** — Calendar automation working
 2. **Phase 2 planning** — Directory structure and file downloads
 
 ---

@@ -72,9 +72,17 @@ Main course page with sections.
 key_dates_link = soup.find("a", string=lambda s: s and "key dates" in s.lower())
 ```
 
-**Expected format:** HTML table with columns like:
-- Event/Activity name
-- Date/Time
+**Table structure (3-5 columns depending on course):**
+
+| Column | Content | Example |
+|--------|---------|---------|
+| 1 | Unit/Activity name | "Unit 1: Introduction to marketing" |
+| 2 | Unit release date | "15 December 2025" |
+| 3 | Live session date | "w/c 12 January 2026" or "N/A" |
+| 4 | Quiz opens (if exists) | "09.00am 5 January 2026" or "N/A" |
+| 5 | Quiz closes (if exists) | "09.00am 16 January 2026" or "N/A" |
+
+**Note:** Columns 4-5 only exist for courses with online open book assessments (e.g., MBA11 Marketing).
 
 **If not found:** Skip this source for the course, proceed to assignment pages.
 
