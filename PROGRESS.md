@@ -33,6 +33,16 @@
 - `extract_assessment_dates()` — Source B extraction from Assessment guidance text
 - `scrape_course_dates()` — navigates to course and extracts from both sources
 
+### Commit 5: Parsers Module
+- Created `polecat/parsers.py` with dateparser-based parsing
+- Data class: `ParsedEvent` (normalized event ready for ICS)
+- `parse_date()` — flexible date parsing with UK timezone
+- `extract_dates_from_text()` — regex-based date extraction from free text
+- `detect_event_type()` — identifies Exam, Coursework, Deadline, etc.
+- `parse_duration()` — extracts duration for end time calculation
+- `parse_extracted_date()` — converts ExtractedDate to ParsedEvent(s)
+- `merge_events()` — deduplicates and flags conflicts (Source B prioritized)
+
 ---
 
 ## In Progress
@@ -41,10 +51,9 @@
 ---
 
 ## Up Next
-1. `parsers.py` — Date/text parsing utilities
-2. `calendar_gen.py` — ICS file generation
-3. `main.py` — CLI orchestrator
-4. Unit tests for parsers and calendar generation
+1. `calendar_gen.py` — ICS file generation
+2. `main.py` — CLI orchestrator
+3. Unit tests for parsers and calendar generation
 
 ---
 
