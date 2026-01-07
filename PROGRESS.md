@@ -52,6 +52,14 @@
 - `write_calendar()` — writes ICS file to disk
 - `generate_ics()` — main entry point combining all steps
 
+### Commit 7: CLI Orchestrator
+- Created `polecat/main.py` — ties all modules together
+- `print_banner()` — displays Polecat header
+- `print_summary_table()` — shows extracted events in a formatted table
+- `get_user_confirmation()` — y/n prompt before generating ICS
+- `run()` — main workflow: login → term select → discover → scrape → parse → confirm → generate
+- `main()` — entry point with error handling
+
 ---
 
 ## In Progress
@@ -60,8 +68,7 @@
 ---
 
 ## Up Next
-1. `main.py` — CLI orchestrator
-2. Unit tests for parsers and calendar generation
+1. Unit tests for parsers and calendar generation
 
 ---
 
