@@ -29,9 +29,16 @@ This project and automation tool will be named "polecat".
     * Store `Course Name` and `Course URL`.
 
 ### 2.3 Data Extraction (Dual-Source)
-For *each* course, extract dates from:
-1.  **Source A (Key Dates Table):** "Key resources" -> "Key dates".
-2.  **Source B (Assessment Text):** "Module overview..." -> "Assessment guidance". (Priority for specific exam times).
+For *each* course, extract dates from **BOTH** sources:
+1.  **Source 1 (Key Dates Table):** "Key resources" → "Key dates" link → Table with dates.
+    - Not all courses have this (e.g., MBA10 has it, MBA41 does not).
+    - May contain quizzes/exams NOT found on assignment pages.
+2.  **Source 2 (Assignment Pages):** Course page → `/mod/assign/` links → Each assignment page.
+    - All courses have this.
+    - Extract "Opens:" and "Due:" dates from completion requirements.
+    - **Priority source** when conflicts occur.
+
+See `docs/SITE_STRUCTURE.md` for detailed selectors and patterns.
 
 ### 2.4 Verification & Output
 * **Sanity Check:** Display a summary table of found dates in the terminal.

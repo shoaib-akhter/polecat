@@ -84,12 +84,20 @@
 ---
 
 ## In Progress
-- None (awaiting commit)
+- None (awaiting commit of Commit 9)
 
 ---
 
 ## Up Next
-- Test dual-source extraction on live site
+1. **Commit current changes** — All dual-source extraction code is complete
+2. **Test on live site** — Run `python -m polecat.main` and verify:
+   - SSO login flow works
+   - Term selection works
+   - Courses are discovered
+   - Key Dates extracted (for courses that have it)
+   - Assignment dates extracted
+   - Summary table displays correctly
+   - ICS file generated on confirmation
 
 ---
 

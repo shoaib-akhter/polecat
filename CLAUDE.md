@@ -47,25 +47,32 @@ Polecat automates parts of the Cambridge Judge Business School learning platform
   - `course_name`
   - `course_url`
 
-### 3) Date extraction for each course
-**Primary source: Assignment pages** (`/mod/assign/view.php`)
+### 3) Date extraction for each course (DUAL SOURCE)
+**CRITICAL:** Dates must be extracted from TWO sources. See `docs/SITE_STRUCTURE.md` for detailed selectors.
 
-See `docs/SITE_STRUCTURE.md` for detailed selectors and patterns.
+**Source 1: Key Dates table** (not all courses have this)
+- Location: Course page → Key Resources → "Key dates" link
+- Contains: Exams, quizzes, deadlines — may have dates NOT found on assignment pages
+- If not found: Skip this source for the course
 
-Strategy:
-1. Navigate to course page
-2. Find all assignment links (`/mod/assign/`)
-3. Visit each assignment page
-4. Extract "Opens:" and "Due:" dates from completion requirements div
+**Source 2: Assignment pages** (all courses have this)
+- Location: Course page → Find `/mod/assign/` links → Visit each
+- Contains: "Opens:" and "Due:" dates in completion requirements div
+- Primary/priority source when conflicts occur
+
+**Conflict resolution:**
+- If same activity has different dates in both sources → Prioritize Assignment pages
+- Flag conflicts for user notification in summary table
 
 Normalize into a single internal structure:
   - `course_name`
   - `title` (e.g., "MBA41 Individual Assignment - Due")
   - `start_dt` (timezone-aware)
   - `all_day` (if no time)
-  - `source` ("assignment")
-  - `url` (deep link to assignment)
+  - `source` ("key_dates" or "assignment")
+  - `url` (deep link)
   - `notes` (optional)
+  - `conflict` (True if sources disagreed)
 
 ### 4) Verification + output
 - Print a compact summary table (sorted by date).
