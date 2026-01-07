@@ -46,6 +46,36 @@ DATE_PATTERN = re.compile(
 )
 
 
+def clean_title(text: str) -> str:
+    """
+    Clean up title text from scraped content.
+
+    Fixes common issues:
+    - Missing space after colon (e.g., "Unit 2:Creating" -> "Unit 2: Creating")
+    - Multiple spaces
+    - Leading/trailing whitespace
+
+    Args:
+        text: Raw title text
+
+    Returns:
+        Cleaned title text
+    """
+    if not text:
+        return text
+
+    # Add space after colon if missing (but not for time patterns like "9:00")
+    text = re.sub(r':([A-Za-z])', r': \1', text)
+
+    # Normalize multiple spaces to single space
+    text = re.sub(r'\s+', ' ', text)
+
+    # Strip leading/trailing whitespace
+    text = text.strip()
+
+    return text
+
+
 def extract_courses(page: Page) -> list[Course]:
     """
     Extract all visible course cards from the dashboard.
@@ -184,7 +214,7 @@ def extract_key_dates(page: Page, course: Course) -> list[ExtractedDate]:
                     dates.append(
                         ExtractedDate(
                             course_name=course.name,
-                            title=activity_name,
+                            title=clean_title(activity_name),
                             date_text=date_match.group(0),
                             source="key_dates",
                             url=key_dates_url,
@@ -202,7 +232,7 @@ def extract_key_dates(page: Page, course: Course) -> list[ExtractedDate]:
                     dates.append(
                         ExtractedDate(
                             course_name=course.name,
-                            title=f"{activity_name} - Live Session",
+                            title=clean_title(f"{activity_name} - Live Session"),
                             date_text=wc_match.group(1),
                             source="key_dates",
                             url=key_dates_url,

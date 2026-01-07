@@ -1,5 +1,6 @@
 """CLI orchestrator for Polecat."""
 
+import re
 from datetime import datetime, date
 from playwright.sync_api import sync_playwright
 
@@ -8,6 +9,167 @@ from polecat.scrapers import extract_courses, scrape_course_dates, ExtractedDate
 from polecat.parsers import parse_extracted_date, merge_events, ParsedEvent
 from polecat.calendar_gen import generate_ics
 from polecat.config import CURRENT_TERM
+
+
+# Event type patterns for categorization
+DEADLINE_PATTERNS = [
+    r"\b(exam|examination)\b",
+    r"\b(assignment|submission)\b",
+    r"\b(quiz|assessment)\b",
+    r"\b(deadline|due)\b",
+    r"\b(report|document)\b",
+    r"\b(consent\s*form)\b",
+]
+
+UNIT_RELEASE_PATTERNS = [
+    r"^(module\s+overview|unit\s+\d+)",
+    r"live\s+session",
+]
+
+
+def is_deadline_event(event: ParsedEvent) -> bool:
+    """
+    Check if an event is a deadline (exam, assignment, quiz, submission).
+
+    Args:
+        event: The event to check
+
+    Returns:
+        True if this is a deadline event
+    """
+    title_lower = event.title.lower()
+
+    # Check if it matches deadline patterns
+    for pattern in DEADLINE_PATTERNS:
+        if re.search(pattern, title_lower, re.IGNORECASE):
+            return True
+
+    # Events from assignment source are always deadlines
+    if event.source == "assignment":
+        return True
+
+    return False
+
+
+def is_opens_event(event: ParsedEvent) -> bool:
+    """
+    Check if an event is an "Opens" event (not a deadline).
+
+    Args:
+        event: The event to check
+
+    Returns:
+        True if this is an "Opens" event
+    """
+    return "- Opens" in event.title or "Opens" in event.title
+
+
+def is_quiz_event(event: ParsedEvent) -> bool:
+    """
+    Check if an event is a quiz/assessment (these should always be included).
+
+    Args:
+        event: The event to check
+
+    Returns:
+        True if this is a quiz event
+    """
+    title_lower = event.title.lower()
+    return bool(re.search(r"\b(quiz|open\s*book\s*assessment)\b", title_lower, re.IGNORECASE))
+
+
+def filter_events(
+    events: list[ParsedEvent],
+    include_unit_releases: bool = False,
+    include_opens: bool = False,
+) -> list[ParsedEvent]:
+    """
+    Filter events based on user preferences.
+
+    Default behavior:
+    - Include all deadlines (exams, assignments, submissions, quizzes)
+    - Include quiz Opens dates (they're time-sensitive)
+    - Exclude unit release dates
+    - Exclude non-quiz "Opens" dates
+
+    Args:
+        events: All parsed events
+        include_unit_releases: If True, include unit release dates
+        include_opens: If True, include all "Opens" dates
+
+    Returns:
+        Filtered list of events
+    """
+    filtered = []
+
+    for event in events:
+        # Always include quiz events (both Opens and Due)
+        if is_quiz_event(event):
+            filtered.append(event)
+            continue
+
+        # Check if it's an "Opens" event
+        if is_opens_event(event):
+            if include_opens:
+                filtered.append(event)
+            continue
+
+        # Check if it's a deadline event
+        if is_deadline_event(event):
+            filtered.append(event)
+            continue
+
+        # It's likely a unit release or live session
+        if include_unit_releases:
+            filtered.append(event)
+
+    return filtered
+
+
+def get_filter_preferences() -> tuple[bool, bool]:
+    """
+    Ask user for filtering preferences.
+
+    Returns:
+        Tuple of (include_unit_releases, include_opens)
+    """
+    print()
+    print("=" * 60)
+    print("CALENDAR OPTIONS")
+    print("=" * 60)
+    print()
+    print("By default, only important dates are saved to the calendar:")
+    print("  - Exams and quizzes (including Opens dates for quizzes)")
+    print("  - Assignment/submission deadlines (Due dates)")
+    print()
+
+    # Ask about Opens dates
+    include_opens = False
+    while True:
+        response = input("Include assignment 'Opens' dates? (y/n) [n]: ").strip().lower()
+        if response in ("", "n", "no"):
+            include_opens = False
+            break
+        elif response in ("y", "yes"):
+            include_opens = True
+            break
+        else:
+            print("Please enter 'y' or 'n'")
+
+    # Ask about unit releases
+    include_unit_releases = False
+    while True:
+        response = input("Include unit releases and live sessions? (y/n) [n]: ").strip().lower()
+        if response in ("", "n", "no"):
+            include_unit_releases = False
+            break
+        elif response in ("y", "yes"):
+            include_unit_releases = True
+            break
+        else:
+            print("Please enter 'y' or 'n'")
+
+    return include_unit_releases, include_opens
 
 
 def print_banner() -> None:
@@ -151,10 +313,29 @@ def run() -> None:
                 print("Cancelled. No calendar file generated.")
                 return
 
-            # Step 7: Generate ICS file
+            # Step 7: Get filter preferences
+            include_unit_releases, include_opens = get_filter_preferences()
+
+            # Step 8: Filter events
+            filtered_events = filter_events(
+                merged_events,
+                include_unit_releases=include_unit_releases,
+                include_opens=include_opens,
+            )
+
+            print()
+            print(f"Filtered: {len(filtered_events)} event(s) will be saved to calendar")
+            print(f"  (excluded {len(merged_events) - len(filtered_events)} unit releases/opens dates)")
+
+            if not filtered_events:
+                print()
+                print("WARNING: No events to save after filtering.")
+                return
+
+            # Step 9: Generate ICS file
             print()
             print("Generating calendar...")
-            filepath = generate_ics(merged_events)
+            filepath = generate_ics(filtered_events)
 
             print()
             print("=" * 60)
