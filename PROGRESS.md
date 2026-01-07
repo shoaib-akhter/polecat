@@ -116,6 +116,21 @@
   - Excludes generated `.ics` files
   - Excludes `__pycache__/`, `.pyc`, venv, IDE files, etc.
 
+### Commit 13: Quiz Opens/Closes Date Extraction
+- **Extended Key Dates table extraction** in `scrapers.py`:
+  - Now extracts all 5 columns (was only 3):
+    - Column 1: Unit name
+    - Column 2: Unit release date
+    - Column 3: Live session date
+    - Column 4: Online open book assessment (quiz) opens
+    - Column 5: Online open book assessment (quiz) closes
+  - Handles "09.00am" date format (normalizes to "09:00am")
+  - Skips N/A values
+- **Updated quiz detection** in `main.py`:
+  - Checks both title and notes field for quiz indicators
+  - Quiz events always included (both Opens and Closes)
+- **Removed `__pycache__/` from git tracking**
+
 ---
 
 ## In Progress
@@ -124,7 +139,7 @@
 ---
 
 ## Up Next
-1. **Test filtering on live site** — Verify filtered calendar is cleaner
+1. **Test quiz extraction on live site** — Verify MBA11 Marketing quizzes captured
 2. **Phase 2 planning** — Directory structure and file downloads
 
 ---
