@@ -14,6 +14,10 @@
 - Created `PROGRESS.md` (this file)
 - Created `polecat/__init__.py`
 
+### Commit 2: Configuration
+- Created `polecat/config.py` with constants (URLs, timezone, term, timeouts)
+- Created `requirements.txt` with dependencies
+
 ---
 
 ## In Progress
@@ -22,14 +26,13 @@
 ---
 
 ## Up Next
-1. `config.py` — Constants (base URL, timezone, term)
-2. `browser.py` — Playwright setup + SSO login wait
-3. `scrapers.py` — Course discovery from dashboard
-4. `scrapers.py` — Date extraction (Source A: Key dates, Source B: Assessment guidance)
-5. `parsers.py` — Date/text parsing utilities
-6. `calendar_gen.py` — ICS file generation
-7. `main.py` — CLI orchestrator
-8. Unit tests for parsers and calendar generation
+1. `browser.py` — Playwright setup + SSO login wait
+2. `scrapers.py` — Course discovery from dashboard
+3. `scrapers.py` — Date extraction (Source A: Key dates, Source B: Assessment guidance)
+4. `parsers.py` — Date/text parsing utilities
+5. `calendar_gen.py` — ICS file generation
+6. `main.py` — CLI orchestrator
+7. Unit tests for parsers and calendar generation
 
 ---
 
