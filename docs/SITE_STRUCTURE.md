@@ -1,6 +1,6 @@
 # JBS Learning Platform Site Structure
 
-**Last verified:** 2025-01-07
+**Last verified:** 2026-01-07 (live tested successfully)
 **Base URL:** `https://learn.jbs.cam.ac.uk`
 
 This document describes the structure of the JBS Moodle learning platform for scraping purposes.
@@ -107,10 +107,13 @@ Due: Wednesday, 4 March 2026, 9:00 AM
 soup.find_all("a", href=lambda h: h and "/mod/assign/" in h)
 ```
 
-**Regex patterns for extraction:**
+**Regex patterns for extraction (flexible):**
 ```python
-opens_pattern = r"Opens:\s*([A-Za-z]+,\s*\d{1,2}\s+[A-Za-z]+\s+\d{4},?\s*\d{1,2}:\d{2}\s*(?:AM|PM)?)"
-due_pattern = r"Due:\s*([A-Za-z]+,\s*\d{1,2}\s+[A-Za-z]+\s+\d{4},?\s*\d{1,2}:\d{2}\s*(?:AM|PM)?)"
+# Captures: day number, month name, year + optional time
+date_pattern = r"(?:[A-Za-z]+,?\s+)?(\d{1,2}\s+[A-Za-z]+\s+\d{4})(?:[,\s]+(\d{1,2}:\d{2}\s*(?:AM|PM)))?"
+
+opens_match = re.search(r"Opens:\s*" + date_pattern, text, re.IGNORECASE)
+due_match = re.search(r"Due:\s*" + date_pattern, text, re.IGNORECASE)
 ```
 
 ---
@@ -172,11 +175,18 @@ External LTI tool (Leganto) for reading lists. Not relevant for date extraction.
 
 ---
 
-## Example Courses (as of 2025-01-07)
+## Example Courses (as of 2026-01-07, Lent term)
 
-| Course | Has Key Dates? | Has Assignments? |
-|--------|----------------|------------------|
-| MBA10 Strategy | ✅ Yes | ✅ Yes |
-| MBA41 Energy and Emissions | ❌ No | ✅ Yes |
+| Course | Has Key Dates? | Has Assignments? | Events Found |
+|--------|----------------|------------------|--------------|
+| MBA10 Strategy | ✅ Yes (15) | ✅ Yes (2) | 19 |
+| MBA11 Marketing | ✅ Yes (14) | ✅ Yes (1) | 15 |
+| MBA116 Digital Business | ✅ Yes (6) | ✅ Yes (1) | 8 |
+| MBA12 Corporate Governance | ✅ Yes (15) | ✅ Yes (1) | 17 |
+| MBA137 Data Science | ❌ No | ✅ Yes (1) | 2 |
+| MBA14 Managing Innovation | ❌ No | ✅ Yes (1) | 2 |
+| MBA33 Negotiations Lab | ✅ Yes (17) | ✅ Yes (1) | 19 |
+| MBA34 Global Consulting | ❌ No | ✅ Yes (3) | 5 |
+| MBA41 Energy and Emissions | ❌ No | ✅ Yes (1) | 2 |
 
 This variability is why we must check both sources.

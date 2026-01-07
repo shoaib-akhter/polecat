@@ -247,7 +247,21 @@ def merge_events(events: list[ParsedEvent]) -> list[ParsedEvent]:
                 result.extend(group)
 
     # Sort by date
-    result.sort(key=lambda e: e.start_dt if isinstance(e.start_dt, datetime)
-                else datetime.combine(e.start_dt, datetime.min.time()))
+    # Convert all to timezone-aware datetimes for comparison
+    import pytz
+    tz = pytz.timezone(TIMEZONE)
+
+    def sort_key(e):
+        if isinstance(e.start_dt, datetime):
+            # If already timezone-aware, use as-is
+            if e.start_dt.tzinfo is not None:
+                return e.start_dt
+            # Make naive datetime timezone-aware
+            return tz.localize(e.start_dt)
+        else:
+            # Convert date to timezone-aware datetime
+            return tz.localize(datetime.combine(e.start_dt, datetime.min.time()))
+
+    result.sort(key=sort_key)
 
     return result

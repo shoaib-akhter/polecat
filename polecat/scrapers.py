@@ -247,13 +247,89 @@ def find_assignment_links(soup: BeautifulSoup) -> list[tuple[str, str]]:
     return assignments
 
 
+def extract_dates_near_assignment_link(soup: BeautifulSoup, course: Course, assignment_name: str, assignment_url: str) -> list[ExtractedDate]:
+    """
+    Extract dates shown on the course page near an assignment link.
+
+    On some pages, dates like "Opens: Monday, 12 January 2026, 9:00 AM" appear
+    right below or near the assignment link (e.g., on section pages).
+
+    Args:
+        soup: BeautifulSoup object of course page
+        course: The parent course
+        assignment_name: Name of the assignment
+        assignment_url: URL of the assignment page
+
+    Returns:
+        List of ExtractedDate objects found near the link
+    """
+    dates: list[ExtractedDate] = []
+
+    # Find the assignment link element
+    assign_link = soup.find("a", href=lambda h: h and assignment_url.replace(BASE_URL, "") in h)
+
+    if not assign_link:
+        return dates
+
+    # Look in the parent activity/module container for dates
+    # Moodle typically wraps activities in li.activity or div.activityinstance
+    parent = assign_link.find_parent(["li", "div"], class_=lambda c: c and ("activity" in c or "activityinstance" in c or "modtype" in c))
+
+    if parent:
+        text = parent.get_text(separator=" ", strip=True)
+    else:
+        # Fallback: look at siblings and parent container
+        container = assign_link.find_parent(["li", "div"])
+        if container:
+            text = container.get_text(separator=" ", strip=True)
+        else:
+            return dates
+
+    # Flexible date pattern: day name (optional), day number, month name, year, time (optional)
+    date_pattern = r"(?:[A-Za-z]+,?\s+)?(\d{1,2}\s+[A-Za-z]+\s+\d{4})(?:[,\s]+(\d{1,2}:\d{2}\s*(?:AM|PM)))?"
+
+    # Extract "Opens:" date
+    opens_match = re.search(r"Opens:\s*" + date_pattern, text, re.IGNORECASE)
+    if opens_match:
+        date_str = opens_match.group(1)
+        time_str = opens_match.group(2)
+        full_date = f"{date_str}, {time_str}" if time_str else date_str
+        dates.append(
+            ExtractedDate(
+                course_name=course.name,
+                title=f"{assignment_name} - Opens",
+                date_text=full_date.strip(),
+                source="assignment",
+                url=assignment_url,
+            )
+        )
+
+    # Extract "Due:" date
+    due_match = re.search(r"Due:\s*" + date_pattern, text, re.IGNORECASE)
+    if due_match:
+        date_str = due_match.group(1)
+        time_str = due_match.group(2)
+        full_date = f"{date_str}, {time_str}" if time_str else date_str
+        dates.append(
+            ExtractedDate(
+                course_name=course.name,
+                title=f"{assignment_name} - Due",
+                date_text=full_date.strip(),
+                source="assignment",
+                url=assignment_url,
+            )
+        )
+
+    return dates
+
+
 def extract_assignment_dates(page: Page, course: Course, assignment_name: str, assignment_url: str) -> list[ExtractedDate]:
     """
     Extract Opens and Due dates from an assignment page.
 
-    The dates are found in the completion requirements div with format:
+    The dates are found near the top of the page or in completion requirements:
     - Opens: Monday, 12 January 2026, 9:00 AM
-    - Due: Wednesday, 4 March 2026, 9:00 AM
+    - Due: Friday, 6 March 2026, 9:00 AM
 
     Args:
         page: Playwright page object
@@ -273,36 +349,44 @@ def extract_assignment_dates(page: Page, course: Course, assignment_name: str, a
     html = page.content()
     soup = BeautifulSoup(html, "html.parser")
 
-    # Look for completion requirements region
-    completion_div = soup.find(attrs={"data-region": "completionrequirements"})
+    # Get the full page text for searching
+    text = soup.get_text(separator=" ", strip=True)
 
-    if completion_div:
-        text = completion_div.get_text(separator=" ", strip=True)
-    else:
-        # Fallback: search the whole page for Opens/Due pattern
-        text = soup.get_text(separator=" ", strip=True)
+    # More flexible regex patterns for date extraction
+    # Pattern captures: day name (optional), day number, month name, year, time (optional)
+    # Examples:
+    #   "Monday, 12 January 2026, 9:00 AM"
+    #   "12 January 2026, 9:00 AM"
+    #   "Friday, 6 March 2026, 9:00 AM"
+    date_pattern = r"(?:[A-Za-z]+,?\s+)?(\d{1,2}\s+[A-Za-z]+\s+\d{4})(?:[,\s]+(\d{1,2}:\d{2}\s*(?:AM|PM)))?"
 
     # Extract "Opens:" date
-    opens_match = re.search(r"Opens:\s*([A-Za-z]+,\s*\d{1,2}\s+[A-Za-z]+\s+\d{4},?\s*\d{1,2}:\d{2}\s*(?:AM|PM)?)", text, re.IGNORECASE)
+    opens_match = re.search(r"Opens:\s*" + date_pattern, text, re.IGNORECASE)
     if opens_match:
+        date_str = opens_match.group(1)
+        time_str = opens_match.group(2)
+        full_date = f"{date_str}, {time_str}" if time_str else date_str
         dates.append(
             ExtractedDate(
                 course_name=course.name,
                 title=f"{assignment_name} - Opens",
-                date_text=opens_match.group(1).strip(),
+                date_text=full_date.strip(),
                 source="assignment",
                 url=assignment_url,
             )
         )
 
     # Extract "Due:" date
-    due_match = re.search(r"Due:\s*([A-Za-z]+,\s*\d{1,2}\s+[A-Za-z]+\s+\d{4},?\s*\d{1,2}:\d{2}\s*(?:AM|PM)?)", text, re.IGNORECASE)
+    due_match = re.search(r"Due:\s*" + date_pattern, text, re.IGNORECASE)
     if due_match:
+        date_str = due_match.group(1)
+        time_str = due_match.group(2)
+        full_date = f"{date_str}, {time_str}" if time_str else date_str
         dates.append(
             ExtractedDate(
                 course_name=course.name,
                 title=f"{assignment_name} - Due",
-                date_text=due_match.group(1).strip(),
+                date_text=full_date.strip(),
                 source="assignment",
                 url=assignment_url,
             )
@@ -315,7 +399,7 @@ def scrape_course_dates(page: Page, course: Course) -> list[ExtractedDate]:
     """
     Navigate to a course page and extract dates from BOTH sources:
     1. Key Dates table (if exists)
-    2. Assignment pages
+    2. Assignment links (course page first, then individual pages as fallback)
 
     Args:
         page: Playwright page object
@@ -344,7 +428,7 @@ def scrape_course_dates(page: Page, course: Course) -> list[ExtractedDate]:
     page.goto(course.url)
     page.wait_for_load_state("networkidle")
 
-    # === SOURCE 2: Assignment pages ===
+    # === SOURCE 2: Assignment dates ===
     html = page.content()
     soup = BeautifulSoup(html, "html.parser")
     assignments = find_assignment_links(soup)
@@ -352,7 +436,18 @@ def scrape_course_dates(page: Page, course: Course) -> list[ExtractedDate]:
     if assignments:
         print(f"    Assignments: {len(assignments)} found")
         for assign_name, assign_url in assignments:
-            dates = extract_assignment_dates(page, course, assign_name, assign_url)
+            # First try: extract dates from course page near the assignment link
+            dates = extract_dates_near_assignment_link(soup, course, assign_name, assign_url)
+
+            # Fallback: if no dates found on course page, check individual assignment page
+            if not dates:
+                dates = extract_assignment_dates(page, course, assign_name, assign_url)
+                # Navigate back to course page for next iteration
+                page.goto(course.url)
+                page.wait_for_load_state("networkidle")
+                html = page.content()
+                soup = BeautifulSoup(html, "html.parser")
+
             all_dates.extend(dates)
 
             if dates:

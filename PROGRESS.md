@@ -1,8 +1,8 @@
 # Polecat Development Progress Log
 
 ## Current Status
-**Phase:** 1 (Calendar Automation)
-**Last Updated:** 2025-01-07
+**Phase:** 1 (Calendar Automation) — **WORKING**
+**Last Updated:** 2026-01-07
 
 ---
 
@@ -81,23 +81,37 @@
 - Updated `CLAUDE.md` to reference site structure docs
 - Updated all tests to use new source names
 
+### Commit 10: Documentation Updates
+- Updated `CLAUDE.md` section 3 with dual-source extraction details
+- Updated `project-requirements.md` section 2.3 with accurate source info
+- Updated `PROGRESS.md` with testing steps
+
+### Commit 11: Bug Fixes for Live Site Testing
+- **Fixed timezone comparison bug** in `parsers.py`:
+  - `merge_events()` was comparing offset-naive and offset-aware datetimes
+  - Now converts all datetimes to timezone-aware before sorting
+- **Fixed date extraction regex** in `scrapers.py`:
+  - Original regex too strict for actual page format
+  - New flexible pattern captures: `DD Month YYYY` + optional `HH:MM AM/PM`
+  - Added `extract_dates_near_assignment_link()` for course page extraction
+  - Updated `scrape_course_dates()` to try course page first, then assignment page
+- **Live test results (Lent 2026):**
+  - 9 courses discovered
+  - 79 total events extracted
+  - 11 conflicts detected and flagged
+  - ICS file generated successfully
+
 ---
 
 ## In Progress
-- None (awaiting commit of Commit 9)
+- None
 
 ---
 
 ## Up Next
-1. **Commit current changes** — All dual-source extraction code is complete
-2. **Test on live site** — Run `python -m polecat.main` and verify:
-   - SSO login flow works
-   - Term selection works
-   - Courses are discovered
-   - Key Dates extracted (for courses that have it)
-   - Assignment dates extracted
-   - Summary table displays correctly
-   - ICS file generated on confirmation
+1. **Review generated ICS file** — Verify events are correct
+2. **Consider filtering options** — Unit release dates vs actual deadlines
+3. **Phase 2 planning** — Directory structure and file downloads
 
 ---
 
