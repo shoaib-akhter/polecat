@@ -119,11 +119,11 @@ class TestCreateEvent:
             course_name="Course",
             title="Exam",
             start_dt=datetime(2025, 2, 10, 14, 0),
-            source="A",
+            source="assignment",
         )
         event = create_event(parsed)
 
-        assert "Key dates table" in event.description
+        assert "Assignment page" in event.description
 
 
 class TestCreateCalendar:

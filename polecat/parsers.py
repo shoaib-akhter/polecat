@@ -19,7 +19,7 @@ class ParsedEvent:
     start_dt: datetime | date
     end_dt: Optional[datetime | date] = None
     all_day: bool = False
-    source: str = ""  # "A" or "B"
+    source: str = ""  # "assignment" or "key_dates"
     url: Optional[str] = None
     notes: Optional[str] = None
     conflict: bool = False  # True if this conflicts with another source
@@ -155,7 +155,7 @@ def parse_extracted_date(extracted) -> list[ParsedEvent]:
     """
     Parse an ExtractedDate into one or more ParsedEvents.
 
-    Handles both structured dates (Source A) and free text (Source B).
+    Handles assignment dates (Opens/Due) and key dates.
 
     Args:
         extracted: ExtractedDate from scrapers.py
@@ -170,65 +170,35 @@ def parse_extracted_date(extracted) -> list[ParsedEvent]:
 
     events: list[ParsedEvent] = []
 
-    # For Source A (structured), try direct parsing
-    if extracted.source == "A":
-        parsed_dt = parse_date(extracted.date_text)
-        if parsed_dt:
-            event_type = detect_event_type(extracted.title)
-            all_day = is_all_day(parsed_dt)
+    # Parse the date text directly
+    parsed_dt = parse_date(extracted.date_text)
 
-            events.append(
-                ParsedEvent(
-                    course_name=extracted.course_name,
-                    title=f"{event_type}: {extracted.title}"
-                    if event_type != extracted.title
-                    else extracted.title,
-                    start_dt=parsed_dt.date() if all_day else parsed_dt,
-                    all_day=all_day,
-                    source="A",
-                    url=extracted.url,
-                )
+    if parsed_dt:
+        all_day = is_all_day(parsed_dt)
+
+        events.append(
+            ParsedEvent(
+                course_name=extracted.course_name,
+                title=extracted.title,
+                start_dt=parsed_dt.date() if all_day else parsed_dt,
+                all_day=all_day,
+                source=extracted.source,
+                url=extracted.url,
+                notes=extracted.notes,
             )
-
-    # For Source B (free text), extract all dates
-    elif extracted.source == "B":
-        date_matches = extract_dates_from_text(extracted.date_text)
-        event_type = detect_event_type(extracted.date_text)
-        duration = parse_duration(extracted.date_text)
-
-        for matched_text, parsed_dt in date_matches:
-            all_day = is_all_day(parsed_dt)
-
-            # Calculate end time if duration is known
-            end_dt = None
-            if duration and not all_day:
-                from datetime import timedelta
-
-                end_dt = parsed_dt + timedelta(minutes=duration)
-
-            events.append(
-                ParsedEvent(
-                    course_name=extracted.course_name,
-                    title=event_type,
-                    start_dt=parsed_dt.date() if all_day else parsed_dt,
-                    end_dt=end_dt,
-                    all_day=all_day,
-                    source="B",
-                    url=extracted.url,
-                    notes=f"Extracted from: '{matched_text}'"
-                    if len(date_matches) > 1
-                    else None,
-                )
-            )
+        )
 
     return events
 
 
 def merge_events(events: list[ParsedEvent]) -> list[ParsedEvent]:
     """
-    Merge events from multiple sources, prioritizing Source B on conflicts.
+    Merge events from multiple sources, prioritizing assignment pages on conflicts.
 
-    Marks conflicting events for user review.
+    Conflict resolution rules:
+    - If same course+date has events from both "key_dates" and "assignment" sources
+    - Prioritize "assignment" source (more accurate)
+    - Flag the conflict for user notification
 
     Args:
         events: List of ParsedEvent from all sources
@@ -260,16 +230,17 @@ def merge_events(events: list[ParsedEvent]) -> list[ParsedEvent]:
             result.append(group[0])
         else:
             # Multiple events on same date for same course
-            source_a = [e for e in group if e.source == "A"]
-            source_b = [e for e in group if e.source == "B"]
+            key_dates_events = [e for e in group if e.source == "key_dates"]
+            assignment_events = [e for e in group if e.source == "assignment"]
 
-            if source_a and source_b:
-                # Conflict: prioritize B but flag it
-                for event in source_b:
+            if key_dates_events and assignment_events:
+                # Conflict: prioritize assignment source but flag it
+                for event in assignment_events:
                     event.conflict = True
                     event.notes = (
-                        event.notes or ""
-                    ) + " [Conflicts with Source A - B prioritized]"
+                        (event.notes + " " if event.notes else "") +
+                        "[Conflict: Key Dates table had different info - Assignment page prioritized]"
+                    )
                     result.append(event)
             else:
                 # No conflict between sources, keep all

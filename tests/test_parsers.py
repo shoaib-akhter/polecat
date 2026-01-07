@@ -139,30 +139,31 @@ class TestIsAllDay:
 class TestParseExtractedDate:
     """Tests for parse_extracted_date function."""
 
-    def test_parse_source_a_date(self):
+    def test_parse_assignment_date(self):
         extracted = ExtractedDate(
             course_name="MBA10 Strategy",
-            title="Final Exam",
-            date_text="10 February 2025 14:00",
-            source="A",
-            url="https://example.com/course/1",
+            title="MBA10 Assignment - Due",
+            date_text="Wednesday, 4 March 2026, 9:00 AM",
+            source="assignment",
+            url="https://example.com/mod/assign/view.php?id=123",
         )
         events = parse_extracted_date(extracted)
         assert len(events) >= 1
         assert events[0].course_name == "MBA10 Strategy"
-        assert events[0].source == "A"
+        assert events[0].source == "assignment"
 
-    def test_parse_source_b_free_text(self):
+    def test_parse_assignment_opens_date(self):
         extracted = ExtractedDate(
             course_name="MBA11 Marketing",
-            title="Assessment",
-            date_text="The final exam will be held on 15 March 2025 at 10:00. It is a 3-hour exam.",
-            source="B",
-            url="https://example.com/course/2",
+            title="MBA11 Assignment - Opens",
+            date_text="Monday, 12 January 2026, 9:00 AM",
+            source="assignment",
+            url="https://example.com/mod/assign/view.php?id=456",
         )
         events = parse_extracted_date(extracted)
         assert len(events) >= 1
-        assert events[0].source == "B"
+        assert events[0].source == "assignment"
+        assert "Opens" in events[0].title
 
 
 class TestMergeEvents:
@@ -174,38 +175,38 @@ class TestMergeEvents:
                 course_name="Course A",
                 title="Exam",
                 start_dt=datetime(2025, 2, 10, 14, 0),
-                source="A",
+                source="key_dates",
             ),
             ParsedEvent(
                 course_name="Course B",
                 title="Exam",
                 start_dt=datetime(2025, 2, 15, 10, 0),
-                source="A",
+                source="key_dates",
             ),
         ]
         merged = merge_events(events)
         assert len(merged) == 2
         assert not any(e.conflict for e in merged)
 
-    def test_conflict_prioritizes_source_b(self):
+    def test_conflict_prioritizes_assignment(self):
         events = [
             ParsedEvent(
                 course_name="Course A",
                 title="Exam",
                 start_dt=datetime(2025, 2, 10, 14, 0),
-                source="A",
+                source="key_dates",
             ),
             ParsedEvent(
                 course_name="Course A",
                 title="Exam",
                 start_dt=datetime(2025, 2, 10, 15, 0),  # Same date, different time
-                source="B",
+                source="assignment",
             ),
         ]
         merged = merge_events(events)
-        # Source B should be kept and flagged
+        # Assignment source should be kept and flagged
         assert len(merged) == 1
-        assert merged[0].source == "B"
+        assert merged[0].source == "assignment"
         assert merged[0].conflict is True
 
     def test_events_sorted_by_date(self):
@@ -214,13 +215,13 @@ class TestMergeEvents:
                 course_name="Course A",
                 title="Later Exam",
                 start_dt=datetime(2025, 3, 15, 14, 0),
-                source="A",
+                source="assignment",
             ),
             ParsedEvent(
                 course_name="Course B",
                 title="Earlier Exam",
                 start_dt=datetime(2025, 2, 10, 10, 0),
-                source="A",
+                source="assignment",
             ),
         ]
         merged = merge_events(events)

@@ -47,17 +47,25 @@ Polecat automates parts of the Cambridge Judge Business School learning platform
   - `course_name`
   - `course_url`
 
-### 3) Date extraction for each course (dual source)
-- Source A: **Key resources → Key dates** (table)
-- Source B: **Module overview → Assessment guidance** (free text; preferred for precise exam times)
-- Normalize into a single internal structure, e.g.:
-  - `course`
-  - `title` (e.g., “Exam”, “Coursework due”)
-  - `start_dt`, `end_dt` (timezone-aware if time exists)
+### 3) Date extraction for each course
+**Primary source: Assignment pages** (`/mod/assign/view.php`)
+
+See `docs/SITE_STRUCTURE.md` for detailed selectors and patterns.
+
+Strategy:
+1. Navigate to course page
+2. Find all assignment links (`/mod/assign/`)
+3. Visit each assignment page
+4. Extract "Opens:" and "Due:" dates from completion requirements div
+
+Normalize into a single internal structure:
+  - `course_name`
+  - `title` (e.g., "MBA41 Individual Assignment - Due")
+  - `start_dt` (timezone-aware)
   - `all_day` (if no time)
-  - `source` (A/B)
-  - `url` (deep link if possible)
-  - `confidence/notes` (optional, for sanity checks)
+  - `source` ("assignment")
+  - `url` (deep link to assignment)
+  - `notes` (optional)
 
 ### 4) Verification + output
 - Print a compact summary table (sorted by date).
@@ -96,6 +104,8 @@ If it materially improves DX, you MAY add an opt-in persistent context (stores b
   - `parsers.py` (text cleanup + date parsing)
   - `calendar_gen.py` (ICS creation)
   - `main.py` (CLI orchestrator)
+- `docs/`
+  - `SITE_STRUCTURE.md` — **Documents the JBS Moodle site layout, selectors, and scraping strategy**
 - `tests/` for unit tests of parsing + calendar generation
 
 ---

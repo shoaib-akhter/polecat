@@ -1,5 +1,15 @@
-"""BeautifulSoup scrapers for extracting course and date information."""
+"""BeautifulSoup scrapers for extracting course and date information.
 
+See docs/SITE_STRUCTURE.md for details on the JBS Moodle site layout.
+
+CRITICAL: Dates must be extracted from TWO sources:
+1. Key Dates table (if exists) - may have quizzes/exams not on assignment pages
+2. Assignment pages (all courses) - Opens/Due dates
+
+If conflicts: prioritize Assignment pages, but flag for user.
+"""
+
+import re
 from dataclasses import dataclass
 from typing import Optional
 
@@ -22,11 +32,18 @@ class ExtractedDate:
     """Represents a date extracted from a course page."""
 
     course_name: str
-    title: str  # e.g., "Exam", "Coursework due"
+    title: str  # e.g., "Assignment Due", "Unit 1 Release"
     date_text: str  # Raw date text before parsing
-    source: str  # "A" (Key dates) or "B" (Assessment guidance)
-    url: Optional[str] = None  # Deep link if available
-    notes: Optional[str] = None  # Any ambiguity notes
+    source: str  # "key_dates" or "assignment"
+    url: Optional[str] = None  # Deep link
+    notes: Optional[str] = None  # Any additional context
+
+
+# Date pattern for extraction from Key Dates table
+DATE_PATTERN = re.compile(
+    r'\d{1,2}\s+(?:January|February|March|April|May|June|July|August|September|October|November|December)\s+\d{4}',
+    re.IGNORECASE
+)
 
 
 def extract_courses(page: Page) -> list[Course]:
@@ -82,110 +99,212 @@ def extract_courses(page: Page) -> list[Course]:
     return courses
 
 
-def extract_key_dates(page: Page, course: Course) -> list[ExtractedDate]:
+def find_key_dates_link(soup: BeautifulSoup) -> Optional[str]:
     """
-    Extract dates from Source A: Key resources -> Key dates table.
+    Find the Key Dates link on a course page.
 
     Args:
-        page: Playwright page object on the course page
+        soup: BeautifulSoup object of course page
+
+    Returns:
+        URL to Key Dates page, or None if not found
+    """
+    for link in soup.find_all("a"):
+        text = link.get_text(strip=True).lower()
+        if text == "key dates":
+            href = link.get("href", "")
+            if href:
+                if href.startswith("/"):
+                    href = BASE_URL + href
+                return href
+    return None
+
+
+def extract_key_dates(page: Page, course: Course) -> list[ExtractedDate]:
+    """
+    Extract dates from the Key Dates table (if it exists).
+
+    Key Dates table format:
+    - Column 1: Unit/Activity name
+    - Column 2: Date (release date, submission date, etc.)
+    - Column 3: Live session date (often "w/c" or "N/A")
+
+    Args:
+        page: Playwright page on course page
         course: The course being scraped
 
     Returns:
-        List of ExtractedDate objects from the Key dates table
+        List of ExtractedDate objects from Key Dates table
     """
     html = page.content()
     soup = BeautifulSoup(html, "html.parser")
 
+    # Find Key Dates link
+    key_dates_url = find_key_dates_link(soup)
+
+    if not key_dates_url:
+        return []  # No Key Dates for this course
+
+    print(f"    Found Key Dates page")
+
+    # Navigate to Key Dates page
+    page.goto(key_dates_url)
+    page.wait_for_load_state("networkidle")
+
+    kd_html = page.content()
+    kd_soup = BeautifulSoup(kd_html, "html.parser")
+
     dates: list[ExtractedDate] = []
 
-    # Look for "Key dates" section - typically a table or list
-    # Try to find by heading text first
-    key_dates_heading = soup.find(
-        lambda tag: tag.name in ["h2", "h3", "h4", "h5"]
-        and "key dates" in tag.get_text(strip=True).lower()
-    )
+    # Find all tables
+    tables = kd_soup.find_all("table")
 
-    if not key_dates_heading:
-        # Try finding a link to key dates
-        key_dates_link = soup.find("a", string=lambda s: s and "key dates" in s.lower())
-        if key_dates_link:
-            # Note: we'd need to navigate to this link to get the dates
-            # For now, just note that we found the link but can't extract inline
-            return dates
+    for table in tables:
+        rows = table.find_all("tr")
 
-    # If we found the heading, look for a table or list nearby
-    if key_dates_heading:
-        # Look for table rows in the next sibling elements
-        container = key_dates_heading.find_parent(["div", "section"])
-        if container:
-            rows = container.find_all("tr")
-            for row in rows:
-                cells = row.find_all(["td", "th"])
-                if len(cells) >= 2:
-                    # Assume format: Title | Date
-                    title = cells[0].get_text(strip=True)
-                    date_text = cells[1].get_text(strip=True)
+        # Skip header row
+        for row in rows[1:]:
+            cells = row.find_all(["td", "th"])
 
-                    if title and date_text:
-                        dates.append(
-                            ExtractedDate(
-                                course_name=course.name,
-                                title=title,
-                                date_text=date_text,
-                                source="A",
-                                url=course.url,
-                            )
+            if len(cells) >= 2:
+                activity_name = cells[0].get_text(strip=True)
+                date_cell = cells[1].get_text(strip=True)
+
+                # Skip rows that don't have actual dates
+                if not activity_name or not date_cell:
+                    continue
+
+                # Skip header-like rows
+                if date_cell.lower() in ["date", "submission date", "release date", "assessment submission date"]:
+                    continue
+
+                # Extract date from cell
+                date_match = DATE_PATTERN.search(date_cell)
+                if date_match:
+                    dates.append(
+                        ExtractedDate(
+                            course_name=course.name,
+                            title=activity_name,
+                            date_text=date_match.group(0),
+                            source="key_dates",
+                            url=key_dates_url,
                         )
+                    )
+
+            # Also check column 3 for live session dates (w/c format)
+            if len(cells) >= 3:
+                activity_name = cells[0].get_text(strip=True)
+                live_session = cells[2].get_text(strip=True)
+
+                # Extract "w/c" dates (week commencing)
+                wc_match = re.search(r'w/c\s*(\d{1,2}\s+\w+\s+\d{4})', live_session, re.IGNORECASE)
+                if wc_match:
+                    dates.append(
+                        ExtractedDate(
+                            course_name=course.name,
+                            title=f"{activity_name} - Live Session",
+                            date_text=wc_match.group(1),
+                            source="key_dates",
+                            url=key_dates_url,
+                            notes="Week commencing",
+                        )
+                    )
 
     return dates
 
 
-def extract_assessment_dates(page: Page, course: Course) -> list[ExtractedDate]:
+def find_assignment_links(soup: BeautifulSoup) -> list[tuple[str, str]]:
     """
-    Extract dates from Source B: Module overview -> Assessment guidance.
-
-    This source often contains more precise exam times in free text.
+    Find all assignment links on a course page.
 
     Args:
-        page: Playwright page object on the course page
-        course: The course being scraped
+        soup: BeautifulSoup object of course page
 
     Returns:
-        List of ExtractedDate objects from the Assessment guidance section
+        List of (assignment_name, assignment_url) tuples
     """
+    assignments: list[tuple[str, str]] = []
+    seen_urls: set[str] = set()
+
+    # Find all links to assignment pages
+    assign_links = soup.find_all("a", href=lambda h: h and "/mod/assign/" in h)
+
+    for link in assign_links:
+        href = link.get("href", "")
+        name = link.get_text(strip=True)
+
+        # Skip duplicates and empty
+        if not href or not name or href in seen_urls:
+            continue
+
+        # Normalize URL
+        if href.startswith("/"):
+            href = BASE_URL + href
+
+        seen_urls.add(href)
+        assignments.append((name, href))
+
+    return assignments
+
+
+def extract_assignment_dates(page: Page, course: Course, assignment_name: str, assignment_url: str) -> list[ExtractedDate]:
+    """
+    Extract Opens and Due dates from an assignment page.
+
+    The dates are found in the completion requirements div with format:
+    - Opens: Monday, 12 January 2026, 9:00 AM
+    - Due: Wednesday, 4 March 2026, 9:00 AM
+
+    Args:
+        page: Playwright page object
+        course: The parent course
+        assignment_name: Name of the assignment
+        assignment_url: URL of the assignment page
+
+    Returns:
+        List of ExtractedDate objects (typically 1-2: opens and due dates)
+    """
+    dates: list[ExtractedDate] = []
+
+    # Navigate to assignment page
+    page.goto(assignment_url)
+    page.wait_for_load_state("networkidle")
+
     html = page.content()
     soup = BeautifulSoup(html, "html.parser")
 
-    dates: list[ExtractedDate] = []
+    # Look for completion requirements region
+    completion_div = soup.find(attrs={"data-region": "completionrequirements"})
 
-    # Look for "Assessment guidance" or "Assessment" section
-    assessment_heading = soup.find(
-        lambda tag: tag.name in ["h2", "h3", "h4", "h5"]
-        and "assessment" in tag.get_text(strip=True).lower()
-    )
+    if completion_div:
+        text = completion_div.get_text(separator=" ", strip=True)
+    else:
+        # Fallback: search the whole page for Opens/Due pattern
+        text = soup.get_text(separator=" ", strip=True)
 
-    if not assessment_heading:
-        return dates
-
-    # Get the content after the heading
-    container = assessment_heading.find_parent(["div", "section"])
-    if not container:
-        # Try getting next siblings
-        container = assessment_heading
-
-    # Get all text content - we'll parse dates from free text later
-    text_content = container.get_text(separator=" ", strip=True)
-
-    if text_content:
-        # Store the raw text - parsers.py will extract actual dates
+    # Extract "Opens:" date
+    opens_match = re.search(r"Opens:\s*([A-Za-z]+,\s*\d{1,2}\s+[A-Za-z]+\s+\d{4},?\s*\d{1,2}:\d{2}\s*(?:AM|PM)?)", text, re.IGNORECASE)
+    if opens_match:
         dates.append(
             ExtractedDate(
                 course_name=course.name,
-                title="Assessment",
-                date_text=text_content,
-                source="B",
-                url=course.url,
-                notes="Raw text - needs date parsing",
+                title=f"{assignment_name} - Opens",
+                date_text=opens_match.group(1).strip(),
+                source="assignment",
+                url=assignment_url,
+            )
+        )
+
+    # Extract "Due:" date
+    due_match = re.search(r"Due:\s*([A-Za-z]+,\s*\d{1,2}\s+[A-Za-z]+\s+\d{4},?\s*\d{1,2}:\d{2}\s*(?:AM|PM)?)", text, re.IGNORECASE)
+    if due_match:
+        dates.append(
+            ExtractedDate(
+                course_name=course.name,
+                title=f"{assignment_name} - Due",
+                date_text=due_match.group(1).strip(),
+                source="assignment",
+                url=assignment_url,
             )
         )
 
@@ -194,14 +313,16 @@ def extract_assessment_dates(page: Page, course: Course) -> list[ExtractedDate]:
 
 def scrape_course_dates(page: Page, course: Course) -> list[ExtractedDate]:
     """
-    Navigate to a course page and extract dates from both sources.
+    Navigate to a course page and extract dates from BOTH sources:
+    1. Key Dates table (if exists)
+    2. Assignment pages
 
     Args:
         page: Playwright page object
         course: The course to scrape
 
     Returns:
-        Combined list of dates from Source A and Source B
+        List of ExtractedDate objects from all sources
     """
     print(f"  Scraping: {course.name}")
 
@@ -209,11 +330,39 @@ def scrape_course_dates(page: Page, course: Course) -> list[ExtractedDate]:
     page.goto(course.url)
     page.wait_for_load_state("networkidle")
 
-    # Extract from both sources
-    source_a_dates = extract_key_dates(page, course)
-    source_b_dates = extract_assessment_dates(page, course)
+    all_dates: list[ExtractedDate] = []
 
-    if not source_a_dates and not source_b_dates:
-        print(f"    WARNING: No dates found for {course.name}")
+    # === SOURCE 1: Key Dates table ===
+    key_dates = extract_key_dates(page, course)
+    if key_dates:
+        print(f"    Key Dates: {len(key_dates)} date(s)")
+        all_dates.extend(key_dates)
+    else:
+        print(f"    Key Dates: not found for this course")
 
-    return source_a_dates + source_b_dates
+    # Navigate back to course page for assignment extraction
+    page.goto(course.url)
+    page.wait_for_load_state("networkidle")
+
+    # === SOURCE 2: Assignment pages ===
+    html = page.content()
+    soup = BeautifulSoup(html, "html.parser")
+    assignments = find_assignment_links(soup)
+
+    if assignments:
+        print(f"    Assignments: {len(assignments)} found")
+        for assign_name, assign_url in assignments:
+            dates = extract_assignment_dates(page, course, assign_name, assign_url)
+            all_dates.extend(dates)
+
+            if dates:
+                print(f"      - {assign_name}: {len(dates)} date(s)")
+            else:
+                print(f"      - {assign_name}: no dates found")
+    else:
+        print(f"    Assignments: none found")
+
+    if not all_dates:
+        print(f"    WARNING: No dates found from any source for {course.name}")
+
+    return all_dates

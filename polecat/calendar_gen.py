@@ -77,7 +77,7 @@ def create_event(parsed: ParsedEvent) -> Event:
         description_parts.append(f"Course: {parsed.course_name}")
 
     if parsed.source:
-        source_name = "Key dates table" if parsed.source == "A" else "Assessment guidance"
+        source_name = "Assignment page" if parsed.source == "assignment" else "Key dates"
         description_parts.append(f"Source: {source_name}")
 
     if parsed.conflict:

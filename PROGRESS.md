@@ -62,22 +62,24 @@
 
 ### Commit 8: Unit Tests
 - Created `tests/__init__.py`
-- Created `tests/test_parsers.py` — 20 tests covering:
-  - `parse_date()` — various date formats, edge cases
-  - `extract_dates_from_text()` — single/multiple dates, no matches
-  - `detect_event_type()` — exam, coursework, deadline, quiz, presentation
-  - `parse_duration()` — hours, minutes, no duration
-  - `is_all_day()` — midnight vs non-midnight
-  - `parse_extracted_date()` — Source A and B parsing
-  - `merge_events()` — no conflicts, conflict prioritization, sorting
-- Created `tests/test_calendar_gen.py` — 12 tests covering:
-  - `generate_uid()` — stability, uniqueness, format
-  - `create_event()` — timed, all-day, end time, conflict warning, source info
-  - `create_calendar()` — with events, empty
-  - `get_output_filename()` — format validation
-  - `write_calendar()` — file creation, content validation
-  - `generate_ics()` — integration test
+- Created `tests/test_parsers.py` — tests for parsing functions
+- Created `tests/test_calendar_gen.py` — tests for calendar generation
 - Added `pytest>=7.0.0` to `requirements.txt`
+
+### Commit 9: Dual-Source Date Extraction
+- Updated `docs/SITE_STRUCTURE.md` with critical dual-source extraction rules
+- Rewrote `scrapers.py` for dual-source extraction:
+  - `find_key_dates_link()` — finds Key Dates link on course page
+  - `extract_key_dates()` — extracts dates from Key Dates table (if exists)
+  - `find_assignment_links()` — finds all assignment links on course page
+  - `extract_assignment_dates()` — extracts "Opens:" and "Due:" dates from assignment pages
+  - `scrape_course_dates()` — now extracts from BOTH sources
+- Updated `parsers.py` merge_events() for conflict resolution:
+  - Prioritizes assignment pages over Key Dates table on conflicts
+  - Flags conflicts for user notification
+- Updated `calendar_gen.py` source labels ("key_dates", "assignment")
+- Updated `CLAUDE.md` to reference site structure docs
+- Updated all tests to use new source names
 
 ---
 
@@ -87,7 +89,7 @@
 ---
 
 ## Up Next
-- Phase 1 complete! Ready for testing against live site.
+- Test dual-source extraction on live site
 
 ---
 
@@ -98,8 +100,9 @@
 | 2025-01-07 | Hardcode "Lent" term | Current term, simplifies initial build |
 | 2025-01-07 | Manual term dropdown selection | Simpler, less brittle, matches human-in-the-loop philosophy |
 | 2025-01-07 | Skip session persistence | Simpler for Phase 1, can add later |
-| 2025-01-07 | Prioritize Source B on conflicts | More precise exam times, but flag conflicts for user |
 | 2025-01-07 | UK timezone (Europe/London) | JBS is in Cambridge, UK |
+| 2025-01-07 | Dual-source extraction | Key Dates may have quizzes not on assignment pages; must check both |
+| 2025-01-07 | Prioritize assignment pages on conflicts | Assignment pages have more accurate/official dates |
 
 ---
 
