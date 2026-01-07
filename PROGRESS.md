@@ -60,6 +60,25 @@
 - `run()` — main workflow: login → term select → discover → scrape → parse → confirm → generate
 - `main()` — entry point with error handling
 
+### Commit 8: Unit Tests
+- Created `tests/__init__.py`
+- Created `tests/test_parsers.py` — 20 tests covering:
+  - `parse_date()` — various date formats, edge cases
+  - `extract_dates_from_text()` — single/multiple dates, no matches
+  - `detect_event_type()` — exam, coursework, deadline, quiz, presentation
+  - `parse_duration()` — hours, minutes, no duration
+  - `is_all_day()` — midnight vs non-midnight
+  - `parse_extracted_date()` — Source A and B parsing
+  - `merge_events()` — no conflicts, conflict prioritization, sorting
+- Created `tests/test_calendar_gen.py` — 12 tests covering:
+  - `generate_uid()` — stability, uniqueness, format
+  - `create_event()` — timed, all-day, end time, conflict warning, source info
+  - `create_calendar()` — with events, empty
+  - `get_output_filename()` — format validation
+  - `write_calendar()` — file creation, content validation
+  - `generate_ics()` — integration test
+- Added `pytest>=7.0.0` to `requirements.txt`
+
 ---
 
 ## In Progress
@@ -68,7 +87,7 @@
 ---
 
 ## Up Next
-1. Unit tests for parsers and calendar generation
+- Phase 1 complete! Ready for testing against live site.
 
 ---
 
