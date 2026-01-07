@@ -101,6 +101,21 @@
   - 11 conflicts detected and flagged
   - ICS file generated successfully
 
+### Commit 12: Event Filtering and Calendar Options
+- **Added event filtering** in `main.py`:
+  - By default, only saves deadlines (exams, assignments, submissions, quizzes)
+  - Quiz opens/closes dates always included (time-sensitive)
+  - User can opt-in to include "Opens" dates via prompt
+  - User can opt-in to include unit releases/live sessions via prompt
+  - All events still shown in terminal summary table
+- **Added text cleanup** in `scrapers.py`:
+  - `clean_title()` function fixes formatting issues
+  - Adds space after colons (e.g., "Unit 2:Creating" -> "Unit 2: Creating")
+  - Normalizes whitespace
+- **Added `.gitignore`**:
+  - Excludes generated `.ics` files
+  - Excludes `__pycache__/`, `.pyc`, venv, IDE files, etc.
+
 ---
 
 ## In Progress
@@ -109,9 +124,8 @@
 ---
 
 ## Up Next
-1. **Review generated ICS file** — Verify events are correct
-2. **Consider filtering options** — Unit release dates vs actual deadlines
-3. **Phase 2 planning** — Directory structure and file downloads
+1. **Test filtering on live site** — Verify filtered calendar is cleaner
+2. **Phase 2 planning** — Directory structure and file downloads
 
 ---
 
