@@ -68,6 +68,8 @@ def is_quiz_event(event: ParsedEvent) -> bool:
     """
     Check if an event is a quiz/assessment (these should always be included).
 
+    Quiz events include both "Quiz Opens" and "Quiz Closes" dates.
+
     Args:
         event: The event to check
 
@@ -75,7 +77,16 @@ def is_quiz_event(event: ParsedEvent) -> bool:
         True if this is a quiz event
     """
     title_lower = event.title.lower()
-    return bool(re.search(r"\b(quiz|open\s*book\s*assessment)\b", title_lower, re.IGNORECASE))
+
+    # Check title for quiz patterns
+    if re.search(r"\b(quiz|open\s*book\s*assessment)\b", title_lower, re.IGNORECASE):
+        return True
+
+    # Check notes for quiz indicator
+    if event.notes and "open book assessment" in event.notes.lower():
+        return True
+
+    return False
 
 
 def filter_events(

@@ -154,10 +154,12 @@ def extract_key_dates(page: Page, course: Course) -> list[ExtractedDate]:
     """
     Extract dates from the Key Dates table (if it exists).
 
-    Key Dates table format:
+    Key Dates table format (5 columns):
     - Column 1: Unit/Activity name
-    - Column 2: Date (release date, submission date, etc.)
+    - Column 2: Unit release date
     - Column 3: Live session date (often "w/c" or "N/A")
+    - Column 4: Online open book assessment (quiz) opens
+    - Column 5: Online open book assessment (quiz) closes
 
     Args:
         page: Playwright page on course page
@@ -186,6 +188,12 @@ def extract_key_dates(page: Page, course: Course) -> list[ExtractedDate]:
 
     dates: list[ExtractedDate] = []
 
+    # Pattern for quiz dates like "09.00am 5 January 2026" or "09:00am 5 January 2026"
+    QUIZ_DATE_PATTERN = re.compile(
+        r'(\d{1,2}[.:]\d{2}\s*(?:am|pm)?\s*\d{1,2}\s+\w+\s+\d{4})',
+        re.IGNORECASE
+    )
+
     # Find all tables
     tables = kd_soup.find_all("table")
 
@@ -205,10 +213,10 @@ def extract_key_dates(page: Page, course: Course) -> list[ExtractedDate]:
                     continue
 
                 # Skip header-like rows
-                if date_cell.lower() in ["date", "submission date", "release date", "assessment submission date"]:
+                if date_cell.lower() in ["date", "submission date", "release date", "assessment submission date", "unit release date"]:
                     continue
 
-                # Extract date from cell
+                # Extract date from cell (column 2 - unit release)
                 date_match = DATE_PATTERN.search(date_cell)
                 if date_match:
                     dates.append(
@@ -221,7 +229,7 @@ def extract_key_dates(page: Page, course: Course) -> list[ExtractedDate]:
                         )
                     )
 
-            # Also check column 3 for live session dates (w/c format)
+            # Column 3: Live session dates (w/c format)
             if len(cells) >= 3:
                 activity_name = cells[0].get_text(strip=True)
                 live_session = cells[2].get_text(strip=True)
@@ -239,6 +247,50 @@ def extract_key_dates(page: Page, course: Course) -> list[ExtractedDate]:
                             notes="Week commencing",
                         )
                     )
+
+            # Column 4: Quiz opens dates
+            if len(cells) >= 4:
+                activity_name = cells[0].get_text(strip=True)
+                quiz_opens = cells[3].get_text(strip=True)
+
+                # Skip N/A or empty
+                if quiz_opens and quiz_opens.lower() not in ["n/a", ""]:
+                    quiz_match = QUIZ_DATE_PATTERN.search(quiz_opens)
+                    if quiz_match:
+                        # Normalize the date format (09.00am -> 09:00am)
+                        quiz_date = quiz_match.group(1).replace(".", ":")
+                        dates.append(
+                            ExtractedDate(
+                                course_name=course.name,
+                                title=clean_title(f"{activity_name} - Quiz Opens"),
+                                date_text=quiz_date,
+                                source="key_dates",
+                                url=key_dates_url,
+                                notes="Online open book assessment",
+                            )
+                        )
+
+            # Column 5: Quiz closes dates
+            if len(cells) >= 5:
+                activity_name = cells[0].get_text(strip=True)
+                quiz_closes = cells[4].get_text(strip=True)
+
+                # Skip N/A or empty
+                if quiz_closes and quiz_closes.lower() not in ["n/a", ""]:
+                    quiz_match = QUIZ_DATE_PATTERN.search(quiz_closes)
+                    if quiz_match:
+                        # Normalize the date format (09.00am -> 09:00am)
+                        quiz_date = quiz_match.group(1).replace(".", ":")
+                        dates.append(
+                            ExtractedDate(
+                                course_name=course.name,
+                                title=clean_title(f"{activity_name} - Quiz Closes"),
+                                date_text=quiz_date,
+                                source="key_dates",
+                                url=key_dates_url,
+                                notes="Online open book assessment deadline",
+                            )
+                        )
 
     return dates
 
