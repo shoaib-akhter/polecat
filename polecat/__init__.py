@@ -1,3 +1,7 @@
-"""Polecat - JBS Learning Platform Automation Tool."""
+"""Polecat - JBS Learning Platform Automation Tool.
 
-__version__ = "0.1.0"
+Extract exam dates, assignment deadlines, and quiz schedules from the
+Cambridge Judge Business School learning platform and generate .ics calendar files.
+"""
+
+__version__ = "1.0.0"

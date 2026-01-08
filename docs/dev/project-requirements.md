@@ -84,10 +84,36 @@ See `docs/dev/SITE_STRUCTURE.md` for detailed selectors and patterns.
 * **File System:** Python `os` and `pathlib` modules (Directory creation).
 * **Calendar:** `ics` library.
 * **Date Parsing:** `dateparser`.
+* **Packaging:** `pyproject.toml` (PEP 621).
 
 ---
 
-## 5. Module Architecture
+## 5. Distribution
+
+### 5.1 Package Distribution
+Polecat is distributed as a **pip-installable Python package** on PyPI to lower the barrier for non-technical users.
+
+* **Package Name:** `polecat`
+* **Installation:** `pip install polecat`
+* **CLI Command:** `polecat` (entry point defined in pyproject.toml)
+
+### 5.2 Versioning
+* Follows [Semantic Versioning](https://semver.org/) (MAJOR.MINOR.PATCH)
+* Version defined in `polecat/__init__.py`
+* **v1.0.0** = First stable release (Phase 1 complete)
+
+### 5.3 User Installation Steps
+```bash
+pip install polecat
+playwright install chromium
+polecat
+```
+
+**Note:** `playwright install chromium` is required separately because browser binaries (~150MB) cannot be bundled with PyPI packages.
+
+---
+
+## 6. Module Architecture
 
 1.  **`config.py`**: Constants.
 2.  **`browser.py`**: Playwright init & Login.
@@ -102,7 +128,7 @@ See `docs/dev/SITE_STRUCTURE.md` for detailed selectors and patterns.
 
 ---
 
-## 6. Version Control Strategy
+## 7. Version Control Strategy
 * **Atomic Commits:**
     * *Commit 1-5:* Phase 1 implementation (Calendar).
     * *Commit 6:* Feature - Directory Structure Creation (Phase 2).

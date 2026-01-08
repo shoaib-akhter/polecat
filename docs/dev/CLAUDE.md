@@ -33,6 +33,29 @@ Polecat automates parts of the Cambridge Judge Business School learning platform
 
 ---
 
+## Distribution
+Polecat is distributed as a **pip-installable Python package** on PyPI.
+
+### Installation (for users)
+```bash
+pip install polecat
+playwright install chromium
+polecat
+```
+
+### Versioning
+- Follows [Semantic Versioning](https://semver.org/) (MAJOR.MINOR.PATCH)
+- Version is defined in `polecat/__init__.py`
+- v1.0.0 = First stable release (Phase 1 complete)
+
+### Publishing to PyPI
+```bash
+python -m build
+twine upload dist/*
+```
+
+---
+
 ## How the automation should work (high level)
 ### 1) Browser + login checkpoint
 - Launch Playwright in headful mode.
@@ -105,6 +128,7 @@ If it materially improves DX, you MAY add an opt-in persistent context (stores b
 
 ## Suggested repo layout
 - `polecat/`
+  - `__init__.py` (package init + version)
   - `config.py` (constants)
   - `browser.py` (Playwright setup + login wait)
   - `scrapers.py` (BeautifulSoup extraction)
@@ -116,7 +140,10 @@ If it materially improves DX, you MAY add an opt-in persistent context (stores b
   - `PROGRESS.md` — Development progress log
   - `project-requirements.md` — Project requirements
   - `SITE_STRUCTURE.md` — JBS Moodle site layout, selectors, and scraping strategy
-- `tests/` for unit tests of parsing + calendar generation
+- `tests/` — Unit tests for parsing + calendar generation
+- `pyproject.toml` — Package metadata, dependencies, CLI entry point
+- `README.md` — User-facing documentation
+- `LICENSE` — MIT license
 
 ---
 

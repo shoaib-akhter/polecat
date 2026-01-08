@@ -1,8 +1,9 @@
 # Polecat Development Progress Log
 
 ## Current Status
-**Phase:** 1 (Calendar Automation) — **WORKING**
-**Last Updated:** 2026-01-07
+**Phase:** 1 (Calendar Automation) — **COMPLETE**
+**Version:** 1.0.0
+**Last Updated:** 2026-01-08
 
 ---
 
@@ -131,6 +132,26 @@
   - Quiz events always included (both Opens and Closes)
 - **Removed `__pycache__/` from git tracking**
 
+### Commit 14: Repository Cleanup
+- **Removed `.DS_Store`** from git tracking
+- **Reorganized documentation** into `docs/dev/`:
+  - Moved `CLAUDE.md`, `PROGRESS.md`, `project-requirements.md`
+  - Moved `SITE_STRUCTURE.md` from `docs/` to `docs/dev/`
+  - Updated all internal file references
+- **Removed `tests/__pycache__/`** from git tracking
+- Root now contains only: README.md, LICENSE, requirements.txt, .gitignore, and code directories
+
+### Commit 15: PyPI Package Setup (v1.0.0)
+- **Added `pyproject.toml`** with PEP 621 metadata:
+  - Package name: `polecat`
+  - Version: 1.0.0
+  - CLI entry point: `polecat` command
+  - All dependencies declared
+- **Updated `polecat/__init__.py`** with `__version__ = "1.0.0"`
+- **Updated README.md** with simplified pip install instructions
+- **Updated documentation** (CLAUDE.md, project-requirements.md) with distribution info
+- Polecat is now installable via `pip install polecat`
+
 ---
 
 ## In Progress
@@ -139,7 +160,7 @@
 ---
 
 ## Up Next
-1. **Phase 1 complete!** — Calendar automation working
+1. **Publish to PyPI** — Upload v1.0.0 to pypi.org
 2. **Phase 2 planning** — Directory structure and file downloads
 
 ---
@@ -154,6 +175,8 @@
 | 2025-01-07 | UK timezone (Europe/London) | JBS is in Cambridge, UK |
 | 2025-01-07 | Dual-source extraction | Key Dates may have quizzes not on assignment pages; must check both |
 | 2025-01-07 | Prioritize assignment pages on conflicts | Assignment pages have more accurate/official dates |
+| 2026-01-08 | Distribute as pip package on PyPI | Lowers barrier for non-technical users who don't use git |
+| 2026-01-08 | Version 1.0.0 for first stable release | Phase 1 complete, tested on live site, ready for users |
 
 ---
 

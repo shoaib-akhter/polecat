@@ -18,46 +18,30 @@ A CLI tool that extracts exam dates, assignment deadlines, and quiz schedules fr
 
 ## Installation
 
-### macOS
+### Quick Install (Recommended)
 
 ```bash
-# Clone the repository
-git clone https://github.com/shoaib-akhter/polecat.git
-cd polecat
-
-# Create virtual environment (recommended)
-python3 -m venv venv
-source venv/bin/activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Install Playwright browsers
+pip install polecat
 playwright install chromium
 ```
 
-### Windows
+That's it! Now run `polecat` to start.
 
-```powershell
-# Clone the repository
+### Install from Source
+
+For development or if you prefer to clone the repository:
+
+```bash
 git clone https://github.com/shoaib-akhter/polecat.git
 cd polecat
-
-# Create virtual environment (recommended)
-python -m venv venv
-venv\Scripts\activate
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Install Playwright browsers
+pip install -e .
 playwright install chromium
 ```
 
 ## Usage
 
 ```bash
-python -m polecat.main
+polecat
 ```
 
 ### Steps
