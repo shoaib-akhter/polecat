@@ -38,7 +38,7 @@ For *each* course, extract dates from **BOTH** sources:
     - Extract "Opens:" and "Due:" dates from completion requirements.
     - **Priority source** when conflicts occur.
 
-See `docs/SITE_STRUCTURE.md` for detailed selectors and patterns.
+See `docs/dev/SITE_STRUCTURE.md` for detailed selectors and patterns.
 
 ### 2.4 Verification & Output
 * **Sanity Check:** Display a summary table of found dates in the terminal.

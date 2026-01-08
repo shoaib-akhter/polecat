@@ -1,6 +1,6 @@
 """BeautifulSoup scrapers for extracting course and date information.
 
-See docs/SITE_STRUCTURE.md for details on the JBS Moodle site layout.
+See docs/dev/SITE_STRUCTURE.md for details on the JBS Moodle site layout.
 
 CRITICAL: Dates must be extracted from TWO sources:
 1. Key Dates table (if exists) - may have quizzes/exams not on assignment pages

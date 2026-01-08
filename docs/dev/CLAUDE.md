@@ -48,7 +48,7 @@ Polecat automates parts of the Cambridge Judge Business School learning platform
   - `course_url`
 
 ### 3) Date extraction for each course (DUAL SOURCE)
-**CRITICAL:** Dates must be extracted from TWO sources. See `docs/SITE_STRUCTURE.md` for detailed selectors.
+**CRITICAL:** Dates must be extracted from TWO sources. See `docs/dev/SITE_STRUCTURE.md` for detailed selectors.
 
 **Source 1: Key Dates table** (not all courses have this)
 - Location: Course page → Key Resources → "Key dates" link
@@ -111,8 +111,11 @@ If it materially improves DX, you MAY add an opt-in persistent context (stores b
   - `parsers.py` (text cleanup + date parsing)
   - `calendar_gen.py` (ICS creation)
   - `main.py` (CLI orchestrator)
-- `docs/`
-  - `SITE_STRUCTURE.md` — **Documents the JBS Moodle site layout, selectors, and scraping strategy**
+- `docs/dev/`
+  - `CLAUDE.md` — AI assistant instructions
+  - `PROGRESS.md` — Development progress log
+  - `project-requirements.md` — Project requirements
+  - `SITE_STRUCTURE.md` — JBS Moodle site layout, selectors, and scraping strategy
 - `tests/` for unit tests of parsing + calendar generation
 
 ---
