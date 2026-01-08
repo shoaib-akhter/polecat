@@ -93,8 +93,8 @@ See `docs/dev/SITE_STRUCTURE.md` for detailed selectors and patterns.
 ### 5.1 Package Distribution
 Polecat is distributed as a **pip-installable Python package** on PyPI to lower the barrier for non-technical users.
 
-* **Package Name:** `polecat`
-* **Installation:** `pip install polecat`
+* **Package Name:** `jbs-polecat`
+* **Installation:** `pip install jbs-polecat`
 * **CLI Command:** `polecat` (entry point defined in pyproject.toml)
 
 ### 5.2 Versioning
@@ -104,7 +104,7 @@ Polecat is distributed as a **pip-installable Python package** on PyPI to lower 
 
 ### 5.3 User Installation Steps
 ```bash
-pip install polecat
+pip install jbs-polecat
 playwright install chromium
 polecat
 ```

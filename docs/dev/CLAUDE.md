@@ -38,7 +38,7 @@ Polecat is distributed as a **pip-installable Python package** on PyPI.
 
 ### Installation (for users)
 ```bash
-pip install polecat
+pip install jbs-polecat
 playwright install chromium
 polecat
 ```

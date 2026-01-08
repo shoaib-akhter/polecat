@@ -21,7 +21,7 @@ A CLI tool that extracts exam dates, assignment deadlines, and quiz schedules fr
 ### Quick Install (Recommended)
 
 ```bash
-pip install polecat
+pip install jbs-polecat
 playwright install chromium
 ```
 

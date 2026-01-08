@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "polecat"
+name = "jbs-polecat"
 version = "1.0.0"
 description = "Extract exam dates and deadlines from Cambridge Judge Business School learning platform and generate calendar files"
 readme = "README.md"
